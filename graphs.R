@@ -12,7 +12,7 @@ options(scipen = 999)
 
 ## EDC coverage graph -----
 #edc data import
-edc <- fread("/Users/claire/Documents/adrneh/EDC/ADRN_EDC_799_platypus_maxvar8_minreads5.vcf_PASS.TR7.GQ20.NR7.recode.vcf", sep="\t", header=T, skip=51L, stringsAsFactors = F)
+edc <- fread("ADRN_EDC_799_platypus_maxvar8_minreads5.vcf_PASS.TR7.GQ20.NR7.recode.vcf", sep="\t", header=T, skip=51L, stringsAsFactors = F)
 
 splitInfoCol <- function(x){
   dt <- x
@@ -27,7 +27,7 @@ splitInfoCol <- function(x){
 edc <- splitInfoCol(edc)
 
 #cpg data import
-cpg <- fread("/Users/claire/Documents/adrneh/EDC/CpG_islands.bed", sep="\t", header=F, stringsAsFactors = F) # obtained from Genome Table Browser for hg19
+cpg <- fread("CpG_islands.bed", sep="\t", header=F, stringsAsFactors = F) # obtained from Genome Table Browser for hg19
 names(cpg) <- c("chr", "start", "end", "cpginfo")
 for (i in names(cpg[,c(4)])){
   cpg[[i]] <- sub('.*_', '', cpg[[i]])
@@ -36,7 +36,7 @@ for (i in names(cpg[,c(4)])){
 cpg.edc <- cpg[chr=="chr1"]
 
 #segdup data import
-segdup <- fread("/Users/claire/Documents/adrneh/Scripts_ADRN_from_start/Files_general/hg19_segdup.bed", sep="\t", header=F, stringsAsFactors = F) # Obtained from 1000 Genomes phase 3 release
+segdup <- fread("hg19_segdup.bed", sep="\t", header=F, stringsAsFactors = F) # Obtained from 1000 Genomes phase 3 release
 names(segdup) <- c("chr", "start", "end")
 segdup.edc <- segdup[chr=="chr1" & start >= 151973148 & start <= 153642014,]
 segdup.edc[,c("start") := as.numeric(start)]
@@ -75,7 +75,7 @@ cpg.plot <- ggplot(cpg.edc) + annotate("segment", x=cpg.edc[,start], xend=cpg.ed
 tracks(edc.plot, segdup.plot, cpg.plot, heights=c(5,1,1))
 
 ## EDC variant overlap graph-------
-setwd("/Users/claire/Documents/adrneh/EDC/")
+#setwd("/Users/claire/Documents/adrneh/EDC/")
 illumina <- fread("ADRN_761_plus_EH_43_chr01_EDC_SNPs_multiVCF_vcftools_ingotest.filled.QC.recode.vcf", header=T, skip=1740L)
 illumina <- illumina[FILTER=="PASS",] # FILTER == PASS only, DP > 7, GQ > 20
 platypus <- fread("ADRN_EDC_799_platypus_maxvar8_minreads5.vcf_PASS.TR7.GQ20.NR7.recode.vcf", header=T, skip=51L) # FILTER == PASS only, TR > 7, GQ > 20, NR > 7
@@ -94,7 +94,7 @@ euler(list(Platypus=c(platypus$POS), Illumina=c(illumina$POS)))
 draw.pairwise.venn(15568, 15636, 12522, fill="cornflowerblue", col="transparent", alpha = rep(0.5, 2), cex = rep(1.5, 3), cat.cex=rep(2, 2), category = c("Illumina", "Platypus"), cat.dist=rep(0.07, 2), margin=0.1)
 
 ## FLG concordance graph------
-setwd("/Users/claire/Documents/adrneh/EDC/ashg2017/")
+#setwd("/Users/claire/Documents/adrneh/EDC/ashg2017/")
 
 concordance <- fread("concordance-longform.csv")
 
