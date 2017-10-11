@@ -1,6 +1,6 @@
 # Claire Malley
 # Graphs for ASHG2017 poster
-# Compiled together on September 14
+# Compiled together on October 11
 
 library(data.table)
 library(viridis)
@@ -13,9 +13,12 @@ library(gridExtra)
 library(cowplot)
 library(stringi)
 
+# Discussion about the R code to create the main figure can be found at https://cemalley.com/2017/10/05/multi-plotting-biological-data-just-one-solution-with-r-ggplot-cowplot/
+# As of Oct 11
+
 # EDC coverage graph -----
 #edc data import
-#setwd("/Users/claire/Documents/adrneh/EDC")
+setwd("/Users/claire/Documents/adrneh/EDC")
 edc <- fread("ADRN_EDC_799_platypus_maxvar8_minreads5.vcf_PASS.TR7.GQ20.NR7.recode.vcf", sep="\t", header=T, skip=51L, stringsAsFactors = F)
 
 splitInfoCol <- function(x){
@@ -30,33 +33,8 @@ splitInfoCol <- function(x){
 }
 edc <- splitInfoCol(edc)
 
-#cpg data import
-#setwd("/Users/claire/Documents/adrneh/EDC")
-cpg <- fread("CpG_islands.bed", sep="\t", header=F, stringsAsFactors = F) # obtained from Genome Table Browser for hg19
-names(cpg) <- c("chr", "start", "end", "cpginfo")
-for (i in names(cpg[,c(4)])){
-  cpg[[i]] <- sub('.*_', '', cpg[[i]])
-  cpg <- cpg[, cpginfo:=as.numeric(cpginfo)]
-}
-cpg.edc <- cpg[chr=="chr1"]
-
-#segdup data import
-#setwd("/Users/claire/Documents/adrneh/Scripts_ADRN_from_start/Files_general")
-segdup <- fread("hg19_segdup.bed", sep="\t", header=F, stringsAsFactors = F) # Obtained from 1000 Genomes phase 3 release
-names(segdup) <- c("chr", "start", "end")
-segdup.edc <- segdup[chr=="chr1" & start >= 151973148 & start <= 153642014,]
-segdup.edc[,c("start") := as.numeric(start)]
-segdup.edc[,c("end") := as.numeric(end)]
-
 # structural variants data import
-#setwd("/Users/claire/Documents/adrneh/EDC/ashg2017")
-structvar <- fread("CNVindels-hg19Tables.txt", header=T, stringsAsFactors = F) # Obtained from UCSC table browser schema "DGV Struct Var / hg19.dgvMerged"
-# edc structural variants track
-structvar.plot <- ggplot(data=structvar) + geom_segment(aes(x=structvar[,chromStart], xend=structvar[,chromEnd], y=0, yend=0, color=factor(structvar[,varType])), size=50, alpha=0.15)+
-  theme_bw() +  
-  #annotate("text", label="Structural variants", x=151973148, hjust=0, vjust=1, y=1) +
-  theme(text = element_text(size=15), axis.ticks.y=element_blank(), axis.text.y=element_blank(), axis.line.y = element_blank(), panel.grid.major.y=element_blank(), panel.grid.minor.y = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), legend.position="none", plot.margin = unit(c(-1.5,0,0.5,0), "lines"))+
-  coord_cartesian(xlim=c(151973148, 153642014)) + ylim(0,1)+ scale_color_viridis(discrete = T)
+setwd("/Users/claire/Documents/adrneh/EDC/ashg2017")
 
 #edc track:
 edc.plot <- ggplot(data=edc) + geom_point(aes(x=as.numeric(edc$POS), y=as.numeric(edc$TC)), size=1, alpha=0.3) + theme_bw() + labs(y="Total reads per variant")+
@@ -65,31 +43,7 @@ edc.plot <- ggplot(data=edc) + geom_point(aes(x=as.numeric(edc$POS), y=as.numeri
   ylim(0, 52000)+
   xlim(151973148, 153642014)+
   annotate("text", size=4, vjust=1, hjust=0, label="chr1:151973148-153642014", x=151973148, y=50000)+
-  # low quality and FLG annotations
-  #annotate(size=5, "text", label="Lower coverage spots", x=152235000, y=52000,vjust=1, hjust=0, color="skyblue4")+
- # annotate("rect", xmin=152555000, xmax=152590000, ymin=0, ymax=50000, color="skyblue4", fill="skyblue4", alpha=0.2)+
-  #annotate("rect", xmin=152235000, xmax=152245000, ymin=0, ymax=50000, color="skyblue4", fill="skyblue4", alpha=0.2)+
-  #annotate("rect", xmin=152759000, xmax=152770000, ymin=0, ymax=50000, color="skyblue4", fill="skyblue4", alpha=0.2)+
- # annotate("rect", xmin = 152274685, xmax = 152297517, ymin=0, ymax=50000, color="skyblue4", fill="skyblue4", alpha=0.2)+
   theme(text = element_text(size=15), legend.position="none", axis.title.x=element_blank(), axis.text.x = element_text(margin=margin(0,0,0,0,"pt"), hjust=0), axis.title.y=element_blank())
-
-#segdup track:
-# segdup.edc <- segdup[chr=="chr1" & start >= 151973148 & start <= 153642014,]
-# segdup.edc[,c("start") := as.numeric(start)]
-# segdup.edc[,c("end") := as.numeric(end)]
-# segdup.plot <- ggplot(segdup.edc) + annotate("segment", x=segdup.edc[,start], xend=segdup.edc[,end], y=0, yend=0, size=50)+
-#   theme_bw() +  
-#   #annotate("text", label="Segmental duplications", x=151973148, hjust=0, vjust=1, y=1) +
-#   theme(axis.ticks=element_blank(), axis.text.y=element_blank(), axis.line.y = element_blank(), panel.grid.major.y=element_blank(), panel.grid.minor.y = element_blank(), axis.title.y = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.title.x = element_blank())+
-#   xlim(151973148, 153642014) + ylim(0,1)
-
-#cpg islands track:
-# cpg.plot <- ggplot(cpg.edc) + annotate("segment", x=cpg.edc[,start], xend=cpg.edc[,end], y=0, yend=0, size=50) + theme_bw()+
-#   theme(axis.line.y = element_blank(), panel.grid.major.y=element_blank(), axis.title.y=element_blank(), text = element_text(size=15), axis.text.x = element_text(margin=margin(0,0,0,0,"pt"), hjust=0))+
-#   annotate("text", label="CpG Islands", x=151973148, hjust=0, vjust=1, y=150)
-# #trbl
-#graph it:
-#cowplot::plot_grid(edc.plot, structvar.plot, segdup.plot, rel_heights=c(6,2,1), ncol = 1, align = "v")
 
 # IL4R coverage graph----
 il4r <- fread("ADRN_il4ra_799_platypus_maxvar8_minreads5.QC.vcf", header=T, skip=51L, stringsAsFactors = F)
@@ -103,7 +57,7 @@ il4r.plot <- ggplot(data=il4r) + geom_point(aes(x=as.numeric(il4r$POS), y=as.num
   theme(text = element_text(size=15), legend.position="none", axis.title.x=element_blank(), axis.text.x = element_text(margin=margin(0,0,0,0,"pt"), hjust=0), axis.title.y=element_blank())
 
 # STAT6 ----
-#setwd("/Users/claire/Documents/adrneh/EDC/")
+setwd("/Users/claire/Documents/adrneh/EDC/")
 stat6 <- fread("ADRN_stat6_799_platypus_maxvar8_minreads5.QC.vcf", header=T, skip=51L, stringsAsFactors = F)
 stat6 <- splitInfoCol(stat6)
 stat6.plot <- ggplot(data=stat6) + geom_point(aes(x=as.numeric(stat6$POS), y=as.numeric(stat6$TC)), size=1, alpha=0.3) + theme_bw() +
@@ -114,7 +68,7 @@ stat6.plot <- ggplot(data=stat6) + geom_point(aes(x=as.numeric(stat6$POS), y=as.
   theme(text = element_text(size=15), legend.position="none", axis.title.x=element_blank(), axis.text.x = element_text(margin=margin(0,0,0,0,"pt"), hjust=0), axis.title.y=element_blank())
 
 # IFNG -----
-#setwd("/Users/claire/Documents/adrneh/EDC/")
+setwd("/Users/claire/Documents/adrneh/EDC/")
 ifng <- fread("ADRN_ifng_799_platypus_maxvar8_minreads5.QC.vcf", header=T, skip=51L, stringsAsFactors = F)
 ifng <- splitInfoCol(ifng)
 ifng.plot <- ggplot(data=ifng) + geom_point(aes(x=as.numeric(ifng$POS), y=as.numeric(ifng$TC)), size=1, alpha=0.3) + theme_bw() +
@@ -124,14 +78,38 @@ ifng.plot <- ggplot(data=ifng) + geom_point(aes(x=as.numeric(ifng$POS), y=as.num
   ylim(0, 50000)+ xlim(67716475, 69385582)+
   theme(text = element_text(size=15), legend.position="none", axis.title.x=element_blank(), axis.text.x = element_text(margin=margin(0,0,0,0,"pt"), hjust=0), axis.title.y=element_blank())
 
-# graph IL4R, IFNG, and STAT6 together---
-#grid.arrange(stat6.plot, ifng.plot, il4r.plot, nrow=3, ncol=1)
 
-#cowplot::plot_grid(il4r.plot, ifng.plot, stat6.plot, rel_heights=c(1,1,1), ncol = 1, align = "v")
+# structural variants tracks
+setwd("/Users/claire/Documents/adrneh/EDC/ashg2017/")
+structvar <- fread("CNVindels-hg19Tables.txt", header=T, stringsAsFactors = F) # Obtained from UCSC table browser schema "DGV Struct Var / hg19.dgvMerged"
+# edc structural variants track
+structvar.plot <- ggplot(data=structvar) + geom_segment(aes(x=structvar[,chromStart], xend=structvar[,chromEnd], y=0, yend=0, color=factor(structvar[,varType])), size=50, alpha=0.15)+
+  theme_bw() +  
+  theme(text = element_text(size=15), axis.ticks.y=element_blank(), axis.text.y=element_blank(), axis.line.y = element_blank(), panel.grid.major.y=element_blank(), panel.grid.minor.y = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), legend.position="none", plot.margin = unit(c(-1.5,0,0.5,0), "lines"))+
+  coord_cartesian(xlim=c(151973148, 153642014)) + ylim(0,1)+ scale_color_viridis(discrete = T)
+
+structvar.il4r <- fread("IL4R-CNVindels-hg19Tables.txt", header=T, stringsAsFactors = F) # Obtained from UCSC table browser schema "DGV Struct Var / hg19.dgvMerged"
+# structural variants track
+structvar.il4r.plot <- ggplot(data=structvar.il4r) + geom_segment(aes(x=structvar.il4r[,chromStart], xend=structvar.il4r[,chromEnd], y=0, yend=0, color=factor(structvar.il4r[,varType])), size=50, alpha=0.15)+
+  theme_bw() +
+  theme(text = element_text(size=15), axis.ticks.y=element_blank(), axis.text.y=element_blank(), axis.line.y = element_blank(), panel.grid.major.y=element_blank(), panel.grid.minor.y = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), legend.position="none", plot.margin = unit(c(-1.5,0,0.5,0), "lines"))+
+  coord_cartesian(xlim=c(26516211, 28185184)) + ylim(0,1)+ scale_color_viridis(discrete = T)
+
+structvar.ifng <- fread("IFNG-CNVindels-hg19Tables.txt", header=T, stringsAsFactors = F)
+structvar.ifng.plot <- ggplot(data=structvar.ifng) + geom_segment(aes(x=structvar.ifng[,chromStart], xend=structvar.ifng[,chromEnd], y=0, yend=0, color=factor(structvar.ifng[,varType])), size=50, alpha=0.15)+
+  theme_bw() +
+  theme(text = element_text(size=15), axis.ticks.y=element_blank(), axis.text.y=element_blank(), axis.line.y = element_blank(), panel.grid.major.y=element_blank(), panel.grid.minor.y = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), legend.position="none", plot.margin = unit(c(-1.5,0,0.5,0), "lines"))+
+  coord_cartesian(xlim=c(67716475, 69385582)) + ylim(0,1)+ scale_color_viridis(discrete = T)
+
+structvar.stat6 <- fread("STAT6-CNVindels-hg19Tables.txt", header=T, stringsAsFactors = F)
+structvar.stat6.plot <- ggplot(data=structvar.stat6) + geom_segment(aes(x=structvar.stat6[,chromStart], xend=structvar.stat6[,chromEnd], y=0, yend=0, color=factor(structvar.stat6[,varType])), size=50, alpha=0.15)+
+  theme_bw() +
+  theme(text = element_text(size=15), axis.ticks.y=element_blank(), axis.text.y=element_blank(), axis.line.y = element_blank(), panel.grid.major.y=element_blank(), panel.grid.minor.y = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank(), legend.position="none", plot.margin = unit(c(-1.5,0,0.5,0), "lines"))+
+  coord_cartesian(xlim=c(56662638, 58331753)) + ylim(0,1)+ scale_color_viridis(discrete = T)
+
+# graph IL4R, IFNG, and STAT6 together---
 
 cowplot::plot_grid(edc.plot, structvar.plot, il4r.plot, structvar.il4r.plot, ifng.plot, structvar.ifng.plot, stat6.plot,  structvar.stat6.plot, rel_heights=c(4,1,4,1,4,1,4,1), ncol = 1, align = "v")
-
-#
 
 # EDC variant overlap graph (venn diagram)-------
 setwd("/Users/claire/Documents/adrneh/EDC/")
@@ -206,14 +184,11 @@ remaining.2446 <- (platypus.preQC[POS %in% remaining.3000$start,]) #2446
 remaining.352 <- illumina.subset[(!(illumina.subset$start %in% remaining.2446$POS)) & (!(illumina.subset$start %in% overlaps.table$start))] #352
 
 
-
 #find snps not in illumina
 platypus.exclusive.snps <- platypus.snp[!(platypus.snp$POS %in% illumina.snp$POS)] #1900
 
 illumina.preQC <- fread("/Users/claire/Documents/adrneh/EDC/ashg2017/ADRN_chr1.EDC.Illumina.not.backfilled.vcf", header=T, skip=52L)
 illumina.preQC.miss <- illumina.preQC[(illumina.preQC$POS %in% platypus.exclusive.snps$POS)] #1750
-#nrow(illumina.preQC.miss[!(illumina.preQC.miss$POS %in% platypus.exclusive.snps$POS)])
-
 
 variant.indel.intersect <- intersect(illumina.indel$POS, platypus.indel$POS)
 euler(list(Platypus=c(platypus.indel$POS), Illumina=c(illumina.indel$POS)))
@@ -223,81 +198,19 @@ if(!is.null(dev.list())) dev.off()
 
 #
 
-# FLG concordance graphs------
-#setwd("/Users/claire/Documents/adrneh/EDC/ashg2017/")
+# FLG concordance graph------
+setwd("/Users/claire/Documents/adrneh/EDC/ashg2017/")
 
 concordance <- fread("concordance-longform.csv")
-
 concordance <- concordance[source=="Platypus" | source=="Illumina",]
 
-#concordance <- fread("concordance-updated.csv")
-
-
-# Genotype counts for FLG variants by data source - organized by variant------
+# Genotype counts for FLG variants by data source - organized by variant
 ggplot(concordance, aes(source,count.updated2,fill=genotype))+
   geom_bar(position="stack",stat="identity")+
   facet_wrap(~variant, nrow=1)+
   scale_fill_viridis(discrete=T, direction=-1, name="Genotype")+
   theme_bw()+
   ylim(0,766)+
-  #labs(x="Source", y="Count, individuals")+
   theme(text = element_text(size=18), axis.title = element_blank())
-  
-# Genotype counts for FLG variants by data source - organized instead by source-------
-g_legend<-function(a.gplot){
-  #https://stackoverflow.com/a/12539820
-  tmp <- ggplot_gtable(ggplot_build(a.gplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  legend
-}
 
-conc.platypus <- concordance[source=="Platypus",]
-platypus.flg <- ggplot(conc.platypus, aes(variant,count.updated2,fill=genotype))+
-  geom_bar(position="stack",stat="identity")+
-  scale_fill_viridis(discrete=T, direction=-1, name="Genotype")+
-  theme_bw()+
-  ylim(0,766)+
-  labs(title="Platypus multi-sample VCF", y="Count, individuals")+
-  theme(text = element_text(size=20), legend.position="none", axis.title.y = element_blank(), axis.title.x=element_blank(), axis.text.x = element_text(angle=45, hjust=1, margin=margin(-20,-20,0,-20,"pt")), axis.ticks.y = element_blank(), axis.ticks.x=element_line(color="white"),axis.line.x=element_line(color="white"), panel.border = element_blank())
 
-conc.illumina <- concordance[source=="Illumina",]
-illumina.flg <- ggplot(conc.illumina, aes(variant,count.updated2,fill=genotype, label=count.updated))+
-  geom_bar(position="stack",stat="identity")+
-  scale_fill_viridis(discrete=T, direction=-1, name="Genotype")+
-  #scale_fill_brewer( type = "div" , palette = "Spectral", direction=1 )+
-theme_bw()+
-  ylim(0,766)+
-  labs(title="Illumina Isaac single-sample VCFs")+
-  theme(text = element_text(size=20), legend.position="none", axis.title.y = element_blank(), axis.title.x=element_blank(), axis.text.x = element_text(angle=45, hjust=1, margin=margin(-20,-20,0,-20,"pt")), axis.ticks.y = element_blank(), axis.ticks.x=element_line(color="white"),axis.line.x=element_line(color="white"), panel.border = element_blank())
-
-#+  geom_text(size = 5, color="white", position = position_stack(vjust = 0.5))
-# 
-# conc.taqman <- concordance[source=="TaqMan",]
-# taqman.flg <- ggplot(conc.taqman, aes(variant,count,fill=genotype))+
-#   geom_bar(position="stack",stat="identity")+
-#   scale_fill_viridis(discrete=T, direction=-1, name="Genotype")+
-#   theme_hc()+
-#   ylim(0,766)+
-#   labs(title="TaqMan")+
-#   theme(text = element_text(size=20), axis.title.y = element_blank(), axis.title.x=element_blank(), axis.text.x = element_text(angle=45, hjust=1, margin=margin(-20,-20,0,20,"pt")), axis.ticks = element_blank(), legend.position="none")
-
-empty.plot <- ggplot()+theme_hc() #takes up second row, first column space in order to center the legend
-#legend <- g_legend(platypus.flg)
-
-#grid.arrange(platypus.flg, illumina.flg, taqman.flg, empty.plot, legend, ncol=3, nrow=2, heights=c(7/8, 1/8))
-grid.arrange(platypus.flg, illumina.flg, empty.plot, ncol=2, nrow=2, heights=c(7/8, 1/8))
-
-# EDC concordance, Illumina vs. Platypus for 6 individuals ----
-#setwd("/Users/claire/Documents/adrneh/EDC/ashg2017/")
-matches.data <- fread("matches-data.csv")
-matches.plot <-ggplot(data=matches.data, aes(x=matches.data$`Type of match or mismatch`, y=matches.data$`Mean total`))+
-  geom_bar(stat="identity")+
-  theme_hc()+
-  labs(x="Type of match or mismatch", y="Mean total")+
-  theme(text = element_text(size=20), axis.text.x = element_text(angle=45, hjust=1, margin=margin(-20,-20,0,20,"pt")), axis.ticks = element_blank())+
-  geom_text(x=2, y=8500, label="Mismatches/Matches = 4.8%", size=6, hjust=0)+
-  geom_segment(x=2, xend=2.5, y=1000, yend=8000)+
-  geom_segment(x=1.6, xend=2.5, y=6000, yend=8000)
-
-matches.plot
